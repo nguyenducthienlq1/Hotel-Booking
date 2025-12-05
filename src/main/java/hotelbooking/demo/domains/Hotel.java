@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Min;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -52,4 +54,21 @@ public class Hotel {
     private Instant updatedAt;
     private String createdBy;
     private String updatedBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User user;
+
+    @OneToMany(mappedBy = "hotel_id", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Booking> bookings = new ArrayList<>();
+
+    @OneToMany(mappedBy = "hotel_id", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Room> rooms = new ArrayList<>();
+
+    @OneToMany(mappedBy = "hotel_id", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RoomType> roomTypes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "hotel_id", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<HotelAmenity> hotelAmenities = new ArrayList<>();
+
+
 }

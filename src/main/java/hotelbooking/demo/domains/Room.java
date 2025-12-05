@@ -30,9 +30,9 @@ public class Room {
     private Instant createdAt;
     private Instant updatedAt;
 
-    @Column(name = "hotel_id", nullable = false)
-    private long hotelId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private RoomType roomType;
 
-    @Column(name = "room_type_id", nullable = false)
-    private long roomTypeId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Hotel hotel;
 }

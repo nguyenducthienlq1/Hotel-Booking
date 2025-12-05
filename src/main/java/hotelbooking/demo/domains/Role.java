@@ -21,4 +21,7 @@ public class Role {
 
     @Column(length = 255)
     private String description;
+
+    @OneToOne(mappedBy = "user_role_id")
+    private UserRole userRole;
 }

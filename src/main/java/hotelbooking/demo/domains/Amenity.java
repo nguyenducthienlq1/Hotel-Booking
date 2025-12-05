@@ -3,6 +3,9 @@ package hotelbooking.demo.domains;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "amenities")
 @Getter
@@ -24,4 +27,7 @@ public class Amenity {
 
     @Column(length = 255)
     private String description;
+
+    @OneToMany(mappedBy = "amenity_id", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<HotelAmenity> hotelAmenityList = new ArrayList<>();
 }

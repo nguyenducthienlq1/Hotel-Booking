@@ -25,9 +25,9 @@ public class BookingRoom {
     @Column(name = "total_price", nullable = false)
     private double totalPrice;
 
-    @Column(name = "booking_id", nullable = false)
-    private long bookingId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Room room;
 
-    @Column(name = "room_id", nullable = false)
-    private long roomId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Booking booking;
 }

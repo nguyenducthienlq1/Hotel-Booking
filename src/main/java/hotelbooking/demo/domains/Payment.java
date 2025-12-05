@@ -32,4 +32,8 @@ public class Payment {
 
     @Column(name = "booking_id", nullable = false)
     private long bookingId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Booking booking;
+
 }

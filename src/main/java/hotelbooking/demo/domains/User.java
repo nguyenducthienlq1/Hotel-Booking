@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @NoArgsConstructor
@@ -41,4 +43,16 @@ public class User {
     private Instant updatedAt;
     private String createdBy;
     private String updatedBy;
+
+    @OneToMany(mappedBy = "user_id",cascade = CascadeType.ALL, orphanRemoval = true)
+    List<AuditLog> auditLogs = new ArrayList<>();
+
+    @OneToMany
+    List<UserRole> userRoles = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user_id", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<Review> reviews = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user_id", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<Booking> bookings = new ArrayList<>();
 }

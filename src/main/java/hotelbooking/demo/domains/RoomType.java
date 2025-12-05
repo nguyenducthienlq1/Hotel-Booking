@@ -42,6 +42,7 @@ public class RoomType {
     private Instant createdAt;
     private Instant updatedAt;
 
-    @Column(name = "hotel_id", nullable = false)
-    private long hotelId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Hotel hotel;
 }

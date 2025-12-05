@@ -20,9 +20,9 @@ public class UserRole {
 
     private Instant createdAt;
 
-    @Column(name = "user_id", nullable = false)
-    private long userId;
+    @OneToOne(mappedBy = "user_id")
+    private User user;
 
-    @Column(name = "role_id", nullable = false)
-    private long roleId;
+    @OneToOne(mappedBy = "role_id")
+    private Role role;
 }

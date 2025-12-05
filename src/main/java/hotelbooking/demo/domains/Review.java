@@ -29,12 +29,13 @@ public class Review {
     private boolean isVisible;
 
     // relationship fields must be at the bottom
-    @Column(name = "booking_id")
-    private Long bookingId;
 
-    @Column(name = "user_id", nullable = false)
-    private long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Hotel hotel;
 
-    @Column(name = "hotel_id", nullable = false)
-    private long hotelId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Booking booking;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User user;
 }

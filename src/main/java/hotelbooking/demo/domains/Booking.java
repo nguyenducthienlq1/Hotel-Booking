@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "bookings")
@@ -38,9 +40,16 @@ public class Booking {
     private Instant createdAt;
     private Instant updatedAt;
 
-    @Column(name = "user_id", nullable = false)
-    private long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User user;
 
-    @Column(name = "hotel_id", nullable = false)
-    private long hotelId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Hotel hotel;
+
+    @OneToMany(mappedBy = "booking_id", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<BookingRoom> bookingRoom = new ArrayList<>();
+
+    @OneToOne(fetch = FetchType.LAZY)
+    private Payment payment;
+
 }
