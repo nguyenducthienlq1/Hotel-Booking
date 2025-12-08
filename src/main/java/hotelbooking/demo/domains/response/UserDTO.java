@@ -16,9 +16,8 @@ public class UserDTO {
     private long id;
     private String email;
     private String fullname;
-    private String address;
     private String RoleName;
-    private String image;
+    private String imageUrl;
     private Friend friend;
     private LastMessageDTO lastMessage;
 

@@ -58,16 +58,16 @@ public class Hotel {
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
-    @OneToMany(mappedBy = "hotel_id", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Booking> bookings = new ArrayList<>();
 
-    @OneToMany(mappedBy = "hotel_id", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Room> rooms = new ArrayList<>();
 
-    @OneToMany(mappedBy = "hotel_id", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RoomType> roomTypes = new ArrayList<>();
 
-    @OneToMany(mappedBy = "hotel_id", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HotelAmenity> hotelAmenities = new ArrayList<>();
 
 

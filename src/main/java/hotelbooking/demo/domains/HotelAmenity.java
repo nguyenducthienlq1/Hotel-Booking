@@ -17,8 +17,10 @@ public class HotelAmenity {
     private long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hotel_id")
     private Hotel hotel;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "amenity_id")
     private Amenity amenity;
 }

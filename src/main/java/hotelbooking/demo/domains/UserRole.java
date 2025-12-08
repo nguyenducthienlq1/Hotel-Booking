@@ -20,9 +20,11 @@ public class UserRole {
 
     private Instant createdAt;
 
-    @OneToOne(mappedBy = "user_id")
+    @ManyToOne
+    @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToOne(mappedBy = "role_id")
+    @ManyToOne
+    @JoinColumn(name = "role_id")
     private Role role;
 }

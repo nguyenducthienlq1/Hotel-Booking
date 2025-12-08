@@ -37,22 +37,22 @@ public class User {
     private boolean isActive;
 
     @Column(name = "image_url", columnDefinition = "TEXT")
-    private String urlAvatar;
+    private String imageUrl;
 
     private Instant createdAt;
     private Instant updatedAt;
     private String createdBy;
     private String updatedBy;
 
-    @OneToMany(mappedBy = "user_id",cascade = CascadeType.ALL, orphanRemoval = true)
-    List<AuditLog> auditLogs = new ArrayList<>();
+    @OneToMany(mappedBy = "user",cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AuditLog> auditLogs = new ArrayList<>();
 
     @OneToMany
-    List<UserRole> userRoles = new ArrayList<>();
+    private List<UserRole> userRoles = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user_id", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<Review> reviews = new ArrayList<>();
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Review> reviews = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user_id", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<Booking> bookings = new ArrayList<>();
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Booking> bookings = new ArrayList<>();
 }

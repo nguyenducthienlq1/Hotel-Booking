@@ -46,10 +46,11 @@ public class Booking {
     @ManyToOne(fetch = FetchType.LAZY)
     private Hotel hotel;
 
-    @OneToMany(mappedBy = "booking_id", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BookingRoom> bookingRoom = new ArrayList<>();
 
     @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment")
     private Payment payment;
 
 }

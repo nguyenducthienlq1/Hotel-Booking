@@ -31,8 +31,10 @@ public class Room {
     private Instant updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "roomtype_id")
     private RoomType roomType;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hotel_id")
     private Hotel hotel;
 }

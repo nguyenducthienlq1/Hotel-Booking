@@ -30,10 +30,9 @@ public class Payment {
     private Instant createdAt;
     private Instant updatedAt;
 
-    @Column(name = "booking_id", nullable = false)
-    private long bookingId;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "booking_id")
     private Booking booking;
 
 }

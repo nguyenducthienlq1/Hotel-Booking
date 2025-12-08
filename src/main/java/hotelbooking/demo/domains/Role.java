@@ -3,6 +3,8 @@ package hotelbooking.demo.domains;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "roles")
 @Getter
@@ -22,6 +24,6 @@ public class Role {
     @Column(length = 255)
     private String description;
 
-    @OneToOne(mappedBy = "user_role_id")
-    private UserRole userRole;
+    @OneToMany(mappedBy = "role")
+    private List<UserRole> userRoles;
 }

@@ -29,5 +29,6 @@ public class AuditLog {
     private Instant createdAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "auditlog_id")
     private User user;
 }

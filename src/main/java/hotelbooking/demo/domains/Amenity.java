@@ -28,6 +28,6 @@ public class Amenity {
     @Column(length = 255)
     private String description;
 
-    @OneToMany(mappedBy = "amenity_id", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "amenity", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HotelAmenity> hotelAmenityList = new ArrayList<>();
 }

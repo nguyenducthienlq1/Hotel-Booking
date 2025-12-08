@@ -33,6 +33,7 @@ public class UserService {
         userDTO.setId(UserDTO.getId());
         userDTO.setEmail(UserDTO.getEmail());
         userDTO.setFullname(UserDTO.getFullname());
+        userDTO.setImageUrl(UserDTO.getImageUrl());
         return userDTO;
     }
 }

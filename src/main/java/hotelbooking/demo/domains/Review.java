@@ -31,11 +31,14 @@ public class Review {
     // relationship fields must be at the bottom
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hotel_id")
     private Hotel hotel;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "booking_id")
     private Booking booking;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
     private User user;
 }
