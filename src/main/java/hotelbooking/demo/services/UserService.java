@@ -1,6 +1,7 @@
 package hotelbooking.demo.services;
 
 import hotelbooking.demo.domains.User;
+import hotelbooking.demo.domains.request.LoginDTO;
 import hotelbooking.demo.domains.response.UserDTO;
 import hotelbooking.demo.repositories.UserRepository;
 import jakarta.transaction.Transactional;
@@ -26,14 +27,21 @@ public class UserService {
     }
 
     @Transactional
-    public UserDTO CreateUser(User user) {
-        user.setPassword(this.passwordEncoder.encode(user.getPassword()));
-        User UserDTO= this.userRepository.save(user);
-        UserDTO userDTO = new UserDTO();
-        userDTO.setId(UserDTO.getId());
-        userDTO.setEmail(UserDTO.getEmail());
-        userDTO.setFullname(UserDTO.getFullname());
-        userDTO.setImageUrl(UserDTO.getImageUrl());
+    public UserDTO createUser(LoginDTO loginDTO) {
+        User user = User.builder()
+                .email(loginDTO.getEmail())
+                .fullname(loginDTO.getFullname())
+                .phone(loginDTO.getPhone())
+                .password(passwordEncoder.encode(loginDTO.getPassword()))
+                .isActive(true)
+                .build();
+        User userCurrent = this.userRepository.save(user);
+        UserDTO userDTO = UserDTO.builder()
+                .id(userCurrent.getId())
+                .fullname(userCurrent.getFullname())
+                .email(userCurrent.getEmail())
+                .imageUrl(userCurrent.getImageUrl())
+                .build();
         return userDTO;
     }
 }

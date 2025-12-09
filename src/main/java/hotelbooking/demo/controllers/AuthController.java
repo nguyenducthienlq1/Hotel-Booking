@@ -1,6 +1,7 @@
 package hotelbooking.demo.controllers;
 
 import hotelbooking.demo.domains.User;
+import hotelbooking.demo.domains.request.LoginDTO;
 import hotelbooking.demo.domains.response.UserDTO;
 import hotelbooking.demo.services.UserService;
 import hotelbooking.demo.utils.ApiMessage;
@@ -20,14 +21,13 @@ public class AuthController {
         this.userService = userService;
     }
 
-    @PostMapping("/auth/register")
+    @PostMapping("/register")
     @ApiMessage("Register Account")
-    public ResponseEntity<UserDTO> register(@RequestBody User user) throws IdInvalidException {
-        if(userService.getUserByEmail(user.getEmail())!=null){
+    public ResponseEntity<UserDTO> register(@RequestBody LoginDTO loginDTO) throws IdInvalidException {
+        if(userService.getUserByEmail(loginDTO.getEmail())!=null){
             throw new IdInvalidException("User has been exists!");
         }
-        UserDTO userDTO= userService.CreateUser(user);
+        UserDTO userDTO= userService.createUser(loginDTO);
         return ResponseEntity.ok().body(userDTO);
     }
-
 }

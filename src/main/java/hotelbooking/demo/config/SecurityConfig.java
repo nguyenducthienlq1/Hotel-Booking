@@ -25,17 +25,17 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    //private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
-
     @Value("${ducthien.jwt.base64-secret}")
     private String jwtKey;
 
+    @Bean
     public SecurityFilterChain configure(HttpSecurity http) throws Exception {
         http.
                 csrf(c->c.disable())
-                .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(
-                        authz -> authz.anyRequest().authenticated()
+                        authz -> authz
+                                .requestMatchers("/api/v1/auth/register").permitAll()
+                                .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 

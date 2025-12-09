@@ -20,7 +20,7 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     @Column(nullable = false, length = 200)
     private String email;
@@ -28,13 +28,15 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false, length = 200)
+    @Column(nullable = true, length = 200)
     private String fullname;
 
-    @Column(nullable = false, length = 11)
+    @Column(length = 11)
     private String phone;
 
-    private boolean isActive;
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean isActive = true;
 
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;

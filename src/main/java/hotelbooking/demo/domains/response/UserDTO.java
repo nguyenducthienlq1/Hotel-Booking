@@ -1,9 +1,6 @@
 package hotelbooking.demo.domains.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.List;
@@ -12,12 +9,14 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class UserDTO {
     private long id;
     private String email;
     private String fullname;
     private String RoleName;
     private String imageUrl;
+    private String phone;
     private Friend friend;
     private LastMessageDTO lastMessage;
 
@@ -25,6 +24,7 @@ public class UserDTO {
     @Setter
     @AllArgsConstructor
     @NoArgsConstructor
+    @Builder
     public static class Friend {
         private long sumUser;
         private List<UserDTO> friends;
@@ -34,6 +34,7 @@ public class UserDTO {
     @Setter
     @AllArgsConstructor
     @NoArgsConstructor
+    @Builder
     public static class LastMessageDTO {
         private String content;
         private Instant createdAt;
