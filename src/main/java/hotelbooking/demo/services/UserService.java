@@ -1,7 +1,7 @@
 package hotelbooking.demo.services;
 
 import hotelbooking.demo.domains.User;
-import hotelbooking.demo.domains.request.LoginDTO;
+import hotelbooking.demo.domains.request.RegisterDTO;
 import hotelbooking.demo.domains.response.UserDTO;
 import hotelbooking.demo.repositories.UserRepository;
 import jakarta.transaction.Transactional;
@@ -19,15 +19,12 @@ public class UserService {
     public User save(User user) {
         return userRepository.save(user);
     }
-    public User findByEmail(String email) {
-        return userRepository.findByEmail(email);
-    }
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email);
     }
 
     @Transactional
-    public UserDTO createUser(LoginDTO loginDTO) {
+    public UserDTO createUser(RegisterDTO loginDTO) {
         User user = User.builder()
                 .email(loginDTO.getEmail())
                 .fullname(loginDTO.getFullname())

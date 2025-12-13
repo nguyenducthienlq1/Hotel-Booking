@@ -1,10 +1,12 @@
 package hotelbooking.demo.domains.response;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
+@JsonPropertyOrder({"statusCode", "error", "message", "data"})
 public class RestResponse<T> {
 
     private int statusCode;
