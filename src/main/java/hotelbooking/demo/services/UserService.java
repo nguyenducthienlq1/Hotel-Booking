@@ -41,4 +41,14 @@ public class UserService {
                 .build();
         return userDTO;
     }
+
+    public boolean updateAvatarUser(String email, String imageUrl) {
+        User user = getUserByEmail(email);
+        if (user != null) {
+            user.setImageUrl(imageUrl);
+            save(user);
+            return true;
+        }
+        return false;
+    }
 }

@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Duration;
 
 @RestController
-@RequestMapping("${hotelbooking.api-prefix/auth")
+@RequestMapping("${hotelbooking.api-prefix}/auth")
 public class AuthController {
 
     private final UserService userService;
