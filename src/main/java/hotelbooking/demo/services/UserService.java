@@ -22,24 +22,23 @@ public class UserService {
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email);
     }
-
     @Transactional
-    public UserDTO createUser(RegisterDTO loginDTO) {
+    public User createUser(RegisterDTO loginDTO) {
         User user = User.builder()
                 .email(loginDTO.getEmail())
                 .fullname(loginDTO.getFullname())
                 .phone(loginDTO.getPhone())
                 .password(passwordEncoder.encode(loginDTO.getPassword()))
-                .isActive(true)
+                .isActive(false)
                 .build();
-        User userCurrent = this.userRepository.save(user);
-        UserDTO userDTO = UserDTO.builder()
-                .id(userCurrent.getId())
-                .fullname(userCurrent.getFullname())
-                .email(userCurrent.getEmail())
-                .imageUrl(userCurrent.getImageUrl())
-                .build();
-        return userDTO;
+        this.userRepository.save(user);
+//        UserDTO userDTO = UserDTO.builder()
+//                .id(userCurrent.getId())
+//                .fullname(userCurrent.getFullname())
+//                .email(userCurrent.getEmail())
+//                .imageUrl(userCurrent.getImageUrl())
+//                .build();
+        return user;
     }
 
     public boolean updateAvatarUser(String email, String imageUrl) {

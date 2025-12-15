@@ -1,6 +1,7 @@
 package hotelbooking.demo.domains.response;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 

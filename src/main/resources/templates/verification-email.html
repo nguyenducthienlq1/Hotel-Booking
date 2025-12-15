@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Xác thực tài khoản</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header { text-align: center; padding-bottom: 20px; border-bottom: 1px solid #eeeeee; }
+        .header h1 { color: #2c3e50; margin: 0; font-size: 24px; }
+        .content { padding: 20px 0; color: #555555; line-height: 1.6; }
+        .button-container { text-align: center; margin: 30px 0; }
+        .button { background-color: #007bff; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px; display: inline-block; }
+        .button:hover { background-color: #0056b3; }
+        .footer { text-align: center; font-size: 12px; color: #999999; margin-top: 20px; border-top: 1px solid #eeeeee; padding-top: 20px; }
+        .link-text { word-break: break-all; color: #007bff; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Hotel Booking System 🏨</h1>
+    </div>
+    <div class="content">
+        <p>Xin chào <strong th:text="${name}">Tên Khách Hàng</strong>,</p>
+
+        <p>Cảm ơn bạn đã đăng ký tài khoản tại hệ thống đặt phòng của chúng tôi. Để bắt đầu sử dụng dịch vụ, vui lòng xác thực địa chỉ email của bạn bằng cách bấm vào nút bên dưới:</p>
+
+        <div class="button-container">
+            <a th:href="${link}" class="button" target="_blank">Xác thực ngay</a>
+        </div>
+
+        <p>Link này sẽ hết hạn sau <strong>24 giờ</strong>.</p>
+        <p>Nếu nút bấm không hoạt động, hãy copy đường dẫn sau vào trình duyệt:</p>
+
+        <p><a th:href="${link}" class="link-text" th:text="${link}">http://localhost:8080/example-link</a></p>
+    </div>
+    <div class="footer">
+        <p>Nếu bạn không yêu cầu tạo tài khoản này, vui lòng bỏ qua email này.</p>
+        <p>&copy; 2025 Hotel Booking System. All rights reserved.</p>
+    </div>
+</div>
+</body>
+</html>

@@ -4,7 +4,10 @@ import hotelbooking.demo.domains.User;
 import hotelbooking.demo.domains.request.LoginDTO;
 import hotelbooking.demo.domains.request.RegisterDTO;
 import hotelbooking.demo.domains.request.ResLoginDTO;
-import hotelbooking.demo.domains.response.UserDTO;
+import hotelbooking.demo.domains.response.ResponseMessage;
+import hotelbooking.demo.domains.response.ResponseRegister;
+import hotelbooking.demo.services.BaseRedisService;
+import hotelbooking.demo.services.EmailService;
 import hotelbooking.demo.services.LoginAttemptService;
 import hotelbooking.demo.services.UserService;
 import hotelbooking.demo.utils.ApiMessage;
@@ -24,6 +27,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("${hotelbooking.api-prefix}/auth")
@@ -33,31 +38,65 @@ public class AuthController {
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final SecurityUtil securityUtil;
     private final LoginAttemptService loginAttemptService;
-
+    private final EmailService emailService;
+    private final BaseRedisService redisService;
     public AuthController(UserService userService,
                           AuthenticationManagerBuilder authenticationManagerBuilder,
                           SecurityUtil securityUtil,
-                          LoginAttemptService loginAttemptService) {
+                          LoginAttemptService loginAttemptService,
+                          EmailService emailService,
+                          BaseRedisService redisService) {
         this.userService = userService;
         this.securityUtil = securityUtil;
         this.authenticationManagerBuilder = authenticationManagerBuilder;
         this.loginAttemptService = loginAttemptService;
+        this.emailService = emailService;
+        this.redisService = redisService;
     }
     public static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
-    public static final String REFRESH_TOKEN_ENDPOINT = "${hotelbooking.api-prefix/auth/refresh";
+    public static final String REFRESH_TOKEN_ENDPOINT = "http://localhost:8080/api/v1/auth/refresh";
 
     @Value("${ducthien.jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenExpiration;
 
     @PostMapping("/register")
     @ApiMessage("Register Account")
-    public ResponseEntity<UserDTO> register(@Valid @RequestBody RegisterDTO registerDTO) throws IdInvalidException {
+    public ResponseEntity<ResponseRegister> register(@Valid @RequestBody RegisterDTO registerDTO) throws IdInvalidException {
         if(userService.getUserByEmail(registerDTO.getEmail())!=null){
             throw new IdInvalidException("User has been exists!");
         }
-        UserDTO userDTO= userService.createUser(registerDTO);
-        return ResponseEntity.ok().body(userDTO);
+        User user= userService.createUser(registerDTO);
+        String token = UUID.randomUUID().toString();
+        redisService.set(token, user.getEmail(),24, TimeUnit.HOURS);
+        emailService.sendVerifyEmail("nguyenducthienlq1@gmail.com", user.getEmail(), token);
+        ResponseRegister res = ResponseRegister.builder()
+                .message("Đăng ký thành công, hãy kiểm tra Email để kích hoạt tài khoản")
+                .token(token)
+                .build();
+        return ResponseEntity.ok().body(res);
     }
+
+    @GetMapping("/verify")
+    @ApiMessage("Verify Email")
+    public ResponseEntity<ResponseMessage> verifyEmail(@RequestParam("token") String token) {
+        ResponseMessage res = new ResponseMessage();
+        if (!redisService.hasKey(token)) {
+            res.setMessage("Không thể xác thực email hoặc token đã hết hạn");
+            return ResponseEntity.badRequest().body(res);
+        }
+        String email = (String) redisService.get(token);
+        User user = userService.getUserByEmail(email);
+        if (user != null) {
+            user.setActive(true);
+            userService.save(user);
+            redisService.delete(token);
+            res.setMessage("Xác thực thành công! Bạn có thể đăng nhập ngay bây giờ.");
+            return ResponseEntity.ok(res);
+        }
+        res.setMessage("Lỗi xác thực: Không tìm thấy người dùng.");
+        return ResponseEntity.badRequest().body(res);
+    }
+
     @PostMapping("/login")
     @ApiMessage("Login Account")
     public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody LoginDTO loginDTO) throws IdInvalidException {
@@ -69,6 +108,9 @@ public class AuthController {
 
         try {
             User user = userService.getUserByEmail(loginDTO.getEmail());
+            if (!user.isActive()){
+                throw new IdInvalidException("Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email!");
+            }
             if (user == null) {
                 loginAttemptService.loginFailed(loginDTO.getEmail());
                 throw new IdInvalidException("Tài khoản không tồn tại!");
