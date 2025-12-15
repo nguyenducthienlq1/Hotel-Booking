@@ -36,7 +36,7 @@ public class User {
 
     @Column(nullable = false)
     @Builder.Default
-    private boolean isActive = true;
+    private boolean isActive = false;
 
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;

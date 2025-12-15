@@ -5,6 +5,7 @@ import hotelbooking.demo.domains.request.LoginDTO;
 import hotelbooking.demo.domains.request.RegisterDTO;
 import hotelbooking.demo.domains.request.ResLoginDTO;
 import hotelbooking.demo.domains.response.UserDTO;
+import hotelbooking.demo.services.LoginAttemptService;
 import hotelbooking.demo.services.UserService;
 import hotelbooking.demo.utils.ApiMessage;
 import hotelbooking.demo.utils.SecurityUtil;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
@@ -30,13 +32,16 @@ public class AuthController {
     private final UserService userService;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final SecurityUtil securityUtil;
+    private final LoginAttemptService loginAttemptService;
 
     public AuthController(UserService userService,
                           AuthenticationManagerBuilder authenticationManagerBuilder,
-                          SecurityUtil securityUtil) {
+                          SecurityUtil securityUtil,
+                          LoginAttemptService loginAttemptService) {
         this.userService = userService;
         this.securityUtil = securityUtil;
         this.authenticationManagerBuilder = authenticationManagerBuilder;
+        this.loginAttemptService = loginAttemptService;
     }
     public static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
     public static final String REFRESH_TOKEN_ENDPOINT = "${hotelbooking.api-prefix/auth/refresh";
@@ -57,35 +62,57 @@ public class AuthController {
     @ApiMessage("Login Account")
     public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody LoginDTO loginDTO) throws IdInvalidException {
 
-        User user = userService.getUserByEmail(loginDTO.getEmail());
-        if (user == null) throw new IdInvalidException("User hasn't exists!");
+        if (loginAttemptService.isBlocked(loginDTO.getEmail())) {
+            long seconds = loginAttemptService.getTimeRemaining(loginDTO.getEmail());
+            throw new IdInvalidException("Tài khoản tạm thời bị khóa do nhập sai quá 5 lần. Vui lòng quay lại sau " + seconds + " giây.");
+        }
 
-        UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword());
-        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        try {
+            User user = userService.getUserByEmail(loginDTO.getEmail());
+            if (user == null) {
+                loginAttemptService.loginFailed(loginDTO.getEmail());
+                throw new IdInvalidException("Tài khoản không tồn tại!");
+            }
 
-        var res = new ResLoginDTO();
-        res.setUserLogin(new ResLoginDTO.UserLogin(user.getId(), user.getEmail(), user.getFullname(), user.getImageUrl()));
+            UsernamePasswordAuthenticationToken authenticationToken =
+                    new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword());
 
-        String accessToken = this.securityUtil.createToken(authentication, res);
-        res.setAccessToken(accessToken);
-
-        String refreshToken = this.securityUtil.createRefreshToken(user.getEmail(), res);
+            Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
 
 
-        ResponseCookie resCookies = ResponseCookie
-                .from(REFRESH_TOKEN_COOKIE_NAME, refreshToken)
-                .httpOnly(true)
-                .secure(true)
-                .path(REFRESH_TOKEN_ENDPOINT)
-                .maxAge(Duration.ofSeconds(refreshTokenExpiration))
-                .build();
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, resCookies.toString())
-                .body(res);
+            loginAttemptService.loginSucceeded(loginDTO.getEmail());
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            var res = new ResLoginDTO();
+            res.setUserLogin(new ResLoginDTO.UserLogin(user.getId(), user.getEmail(), user.getFullname(), user.getImageUrl()));
+
+            String accessToken = this.securityUtil.createToken(authentication, res);
+            res.setAccessToken(accessToken);
+
+            String refreshToken = this.securityUtil.createRefreshToken(user.getEmail(), res);
+
+            ResponseCookie resCookies = ResponseCookie
+                    .from(REFRESH_TOKEN_COOKIE_NAME, refreshToken)
+                    .httpOnly(true)
+                    .secure(true) // Nhớ đổi thành false nếu test local http
+                    .path(REFRESH_TOKEN_ENDPOINT)
+                    .maxAge(Duration.ofSeconds(refreshTokenExpiration))
+                    .build();
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, resCookies.toString())
+                    .body(res);
+
+        } catch (BadCredentialsException e) {
+
+            loginAttemptService.loginFailed(loginDTO.getEmail());
+
+            throw new IdInvalidException("Email hoặc mật khẩu không chính xác!");
+        }
     }
-
+    @GetMapping("/refresh")
+    @ApiMessage("Refresh Token")
     public ResponseEntity<ResLoginDTO> refreshToken(@CookieValue (name = REFRESH_TOKEN_COOKIE_NAME, required = false) String refreshTokenCookieVal) throws IdInvalidException {
         if (refreshTokenCookieVal == null || refreshTokenCookieVal.isBlank()){
             throw new IdInvalidException("Refresh token is empty!");
