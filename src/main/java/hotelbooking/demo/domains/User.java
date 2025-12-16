@@ -38,7 +38,10 @@ public class User {
     @Builder.Default
     private boolean isActive = false;
 
+    @Builder.Default
+    @Column(name = "is_two_factor_enabled", columnDefinition = "TINYINT(1)")
     private boolean isTwoFactorEnabled = false;
+
     private String twoFactorSecret;
 
     @Column(name = "image_url", columnDefinition = "TEXT")

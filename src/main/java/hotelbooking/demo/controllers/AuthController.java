@@ -1,5 +1,6 @@
 package hotelbooking.demo.controllers;
 
+import com.warrenstrange.googleauth.GoogleAuthenticator;
 import hotelbooking.demo.domains.User;
 import hotelbooking.demo.domains.request.LoginDTO;
 import hotelbooking.demo.domains.request.RegisterDTO;
@@ -7,6 +8,7 @@ import hotelbooking.demo.domains.request.ResLoginDTO;
 import hotelbooking.demo.domains.request.Verify2FADTO;
 import hotelbooking.demo.domains.response.ResponseMessage;
 import hotelbooking.demo.domains.response.ResponseRegister;
+import hotelbooking.demo.domains.response.TwoFactorSetupDTO;
 import hotelbooking.demo.services.BaseRedisService;
 import hotelbooking.demo.services.EmailService;
 import hotelbooking.demo.services.LoginAttemptService;
@@ -23,13 +25,17 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("${hotelbooking.api-prefix}/auth")
@@ -197,7 +203,7 @@ public class AuthController {
                 .body(res);
     }
 
-    @PostMapping("/verify-2fa")
+    @PostMapping("/2fa/verify-2fa")
     @ApiMessage("2FA Login")
     public ResponseEntity<?> verify2FA(@RequestBody Verify2FADTO request) {
         User user = userService.getUserByEmail(request.getEmail());
@@ -205,10 +211,69 @@ public class AuthController {
         boolean isValid = userService.validateCode(user.getTwoFactorSecret(), request.getCode());
 
         if (isValid) {
-            String accessToken = securityUtil.createToken(user);
-            return ResponseEntity.ok(new LoginResponse("SUCCESS", accessToken));
+            if (!user.isTwoFactorEnabled()) {
+                user.setTwoFactorEnabled(true);
+                userService.save(user);
+            }
+            List<GrantedAuthority> authorities = user.getUserRoles().stream()
+                    .map(role -> new SimpleGrantedAuthority("ROLE_USER_CREATE")) // Ví dụ: "ROLE_USER"
+                    .collect(Collectors.toList());
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                    user.getEmail(),
+                    null,
+                    authorities
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(
+                    user.getId(),
+                    user.getEmail(),
+                    user.getFullname(),
+                    user.getImageUrl()
+            );
+            ResLoginDTO dummyDtoForTokenGen = new ResLoginDTO();
+            dummyDtoForTokenGen.setUserLogin(userLogin);
+            //Tạo accessToken và refreshToken
+            String accessToken = securityUtil.createToken(authentication, dummyDtoForTokenGen);
+            String refreshToken = securityUtil.createRefreshToken(user.getEmail(), dummyDtoForTokenGen);
+            //Tạo cookie
+            ResponseCookie resCookies = ResponseCookie
+                    .from(REFRESH_TOKEN_COOKIE_NAME, refreshToken)
+                    .httpOnly(true)
+                    .secure(true) // Nhớ đổi thành false nếu test local http
+                    .path(REFRESH_TOKEN_ENDPOINT)
+                    .maxAge(Duration.ofSeconds(refreshTokenExpiration))
+                    .build();
+
+            ResLoginDTO finalResponse = new ResLoginDTO();
+            finalResponse.setAccessToken(accessToken);
+            finalResponse.setUserLogin(userLogin);
+            finalResponse.setMfaRequired(false);
+            finalResponse.setMessage("Xác thực 2 lớp thành công");
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, resCookies.toString())
+                    .body(finalResponse);
         } else {
             return ResponseEntity.status(401).body("Mã xác thực không đúng!");
         }
+    }
+    @GetMapping("/2fa/setup")
+    @ApiMessage("Get QR Code for 2FA Setup")
+    public ResponseEntity<TwoFactorSetupDTO> setup2FA() {
+
+        String email = SecurityUtil.getCurrentUserLogin().orElseThrow(() -> new RuntimeException("Chưa đăng nhập"));
+        User user = userService.getUserByEmail(email);
+
+        String secret = userService.generateSecret();
+
+        user.setTwoFactorSecret(secret);
+        userService.save(user);
+
+        String qrCodeUrl = userService.getQrCodeUrl(secret,user.getEmail());
+
+        return ResponseEntity.ok(TwoFactorSetupDTO.builder()
+                .secret(secret)
+                .qrCodeUrl(qrCodeUrl)
+                .build());
     }
 }
