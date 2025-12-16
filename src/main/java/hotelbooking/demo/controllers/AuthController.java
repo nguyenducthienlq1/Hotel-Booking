@@ -4,6 +4,7 @@ import hotelbooking.demo.domains.User;
 import hotelbooking.demo.domains.request.LoginDTO;
 import hotelbooking.demo.domains.request.RegisterDTO;
 import hotelbooking.demo.domains.request.ResLoginDTO;
+import hotelbooking.demo.domains.request.Verify2FADTO;
 import hotelbooking.demo.domains.response.ResponseMessage;
 import hotelbooking.demo.domains.response.ResponseRegister;
 import hotelbooking.demo.services.BaseRedisService;
@@ -108,29 +109,38 @@ public class AuthController {
 
         try {
             User user = userService.getUserByEmail(loginDTO.getEmail());
-            if (!user.isActive()){
-                throw new IdInvalidException("Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email!");
-            }
+            // Kiểm tra tài khoản tồn tại
             if (user == null) {
                 loginAttemptService.loginFailed(loginDTO.getEmail());
                 throw new IdInvalidException("Tài khoản không tồn tại!");
             }
+            // Kiểm tra tài khoản kích hoạt
+            if (!user.isActive()){
+                throw new IdInvalidException("Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email!");
+            }
 
             UsernamePasswordAuthenticationToken authenticationToken =
                     new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword());
-
             Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
 
 
             loginAttemptService.loginSucceeded(loginDTO.getEmail());
-
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
             var res = new ResLoginDTO();
+
+            if (user.isTwoFactorEnabled()){
+                res.setMfaRequired(true);
+                res.setMessage("Tài khoản đang được bảo mật 2 lớp, vui lòng nhập mã otp");
+                return ResponseEntity.ok(res);
+            }
+
             res.setUserLogin(new ResLoginDTO.UserLogin(user.getId(), user.getEmail(), user.getFullname(), user.getImageUrl()));
 
             String accessToken = this.securityUtil.createToken(authentication, res);
             res.setAccessToken(accessToken);
+            res.setMfaRequired(false);
+
 
             String refreshToken = this.securityUtil.createRefreshToken(user.getEmail(), res);
 
@@ -147,9 +157,7 @@ public class AuthController {
                     .body(res);
 
         } catch (BadCredentialsException e) {
-
             loginAttemptService.loginFailed(loginDTO.getEmail());
-
             throw new IdInvalidException("Email hoặc mật khẩu không chính xác!");
         }
     }
@@ -187,5 +195,20 @@ public class AuthController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, resCookies.toString())
                 .body(res);
+    }
+
+    @PostMapping("/verify-2fa")
+    @ApiMessage("2FA Login")
+    public ResponseEntity<?> verify2FA(@RequestBody Verify2FADTO request) {
+        User user = userService.getUserByEmail(request.getEmail());
+
+        boolean isValid = userService.validateCode(user.getTwoFactorSecret(), request.getCode());
+
+        if (isValid) {
+            String accessToken = securityUtil.createToken(user);
+            return ResponseEntity.ok(new LoginResponse("SUCCESS", accessToken));
+        } else {
+            return ResponseEntity.status(401).body("Mã xác thực không đúng!");
+        }
     }
 }

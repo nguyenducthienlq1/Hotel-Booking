@@ -38,6 +38,9 @@ public class User {
     @Builder.Default
     private boolean isActive = false;
 
+    private boolean isTwoFactorEnabled = false;
+    private String twoFactorSecret;
+
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 

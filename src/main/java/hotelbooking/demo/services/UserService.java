@@ -1,5 +1,7 @@
 package hotelbooking.demo.services;
 
+import com.warrenstrange.googleauth.GoogleAuthenticator;
+import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 import hotelbooking.demo.domains.User;
 import hotelbooking.demo.domains.request.RegisterDTO;
 import hotelbooking.demo.domains.response.UserDTO;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 public class UserService {
     private UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final GoogleAuthenticator googleAuthenticator = new GoogleAuthenticator();
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -32,12 +35,6 @@ public class UserService {
                 .isActive(false)
                 .build();
         this.userRepository.save(user);
-//        UserDTO userDTO = UserDTO.builder()
-//                .id(userCurrent.getId())
-//                .fullname(userCurrent.getFullname())
-//                .email(userCurrent.getEmail())
-//                .imageUrl(userCurrent.getImageUrl())
-//                .build();
         return user;
     }
 
@@ -49,5 +46,21 @@ public class UserService {
             return true;
         }
         return false;
+    }
+
+    public String generateSecret(){
+        final GoogleAuthenticatorKey key = googleAuthenticator.createCredentials();
+        return key.getKey();
+    }
+
+    public String getQrCodeUrl(String secret, String email) {
+        // Format chuẩn của Google Auth: otpauth://totp/Issuer:Email?secret=...&issuer=...
+        String appName = "HotelBookingSystem";
+        return String.format("otpauth://totp/%s:%s?secret=%s&issuer=%s",
+                appName, email, secret, appName);
+    }
+
+    public boolean validateCode(String secretKey, int verificationCode) {
+        return googleAuthenticator.authorize(secretKey, verificationCode);
     }
 }

@@ -1,10 +1,7 @@
 package hotelbooking.demo.domains.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
@@ -15,6 +12,10 @@ public class ResLoginDTO {
     @JsonProperty("access_token")
     private String accessToken;
 
+    @JsonProperty("mfa_required")
+    private boolean mfaRequired = false; // Mặc định là false
+
+    private String message; // Để thông báo: "Vui lòng nhập mã OTP"
 
     @Getter
     @Setter
