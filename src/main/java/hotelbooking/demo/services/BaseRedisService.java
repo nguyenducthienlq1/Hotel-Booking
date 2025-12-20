@@ -1,17 +1,20 @@
 package hotelbooking.demo.services;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
 
 @Service
 public class BaseRedisService {
-
     private final RedisTemplate<String, Object> redisTemplate;
-
-    public BaseRedisService(RedisTemplate<String, Object> redisTemplate) {
+    private final StringRedisTemplate stringRedisTemplate;
+    public BaseRedisService(RedisTemplate<String, Object> redisTemplate,
+                            StringRedisTemplate stringRedisTemplate) {
         this.redisTemplate = redisTemplate;
+        this.stringRedisTemplate = stringRedisTemplate;
     }
 
     // 1. Lưu dữ liệu (Set)
@@ -42,5 +45,12 @@ public class BaseRedisService {
     // 6. Set thời gian hết hạn cho key
     public void setTimeToLive(String key, long timeout, TimeUnit unit) {
         redisTemplate.expire(key, timeout, unit);
+    }
+    public void blacklistToken(String token, long timeToLive) {
+        stringRedisTemplate.opsForValue().set(token, "blacklisted", timeToLive, TimeUnit.SECONDS);
+    }
+
+    public boolean isTokenBlacklisted(String token) {
+        return Boolean.TRUE.equals(stringRedisTemplate.hasKey(token));
     }
 }

@@ -1,5 +1,6 @@
 package hotelbooking.demo.domains;
 
+import hotelbooking.demo.utils.SecurityUtil;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -63,4 +64,16 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Booking> bookings = new ArrayList<>();
+
+    @PrePersist
+    public void beforeCreate() {
+        this.createdBy = SecurityUtil.getCurrentUserLogin().orElse("");
+        this.createdAt = Instant.now();
+    }
+
+    @PreUpdate
+    public void beforeUpdate() {
+        this.updatedAt = Instant.now();
+        this.updatedBy = SecurityUtil.getCurrentUserLogin().orElse("");
+    }
 }

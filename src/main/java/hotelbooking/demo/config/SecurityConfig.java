@@ -2,6 +2,7 @@ package hotelbooking.demo.config;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.util.Base64;
+import hotelbooking.demo.services.BaseRedisService;
 import hotelbooking.demo.utils.SecurityUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -33,8 +34,11 @@ import javax.crypto.spec.SecretKeySpec;
 public class SecurityConfig {
 
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
-    public SecurityConfig(CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
+    private final BaseRedisService baseRedisService;
+    public SecurityConfig(CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
+                          BaseRedisService baseRedisService) {
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
+        this.baseRedisService = baseRedisService;
     }
 
     @Bean
@@ -70,7 +74,11 @@ public class SecurityConfig {
                 .macAlgorithm(SecurityUtil.JWT_ALGORITHM).build();
         return token -> {
             try {
-                return jwtDecoder.decode(token);
+                if (baseRedisService.isTokenBlacklisted(token)){
+                    throw new BadCredentialsException("Token is blacklisted");
+                }else{
+                    return jwtDecoder.decode(token);
+                }
             } catch(Exception e){
                 System.out.println(">>> JWT error: " + e.getMessage());
                 throw e;

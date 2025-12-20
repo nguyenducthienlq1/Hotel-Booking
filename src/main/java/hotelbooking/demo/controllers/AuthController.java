@@ -9,13 +9,12 @@ import hotelbooking.demo.domains.request.Verify2FADTO;
 import hotelbooking.demo.domains.response.ResponseMessage;
 import hotelbooking.demo.domains.response.ResponseRegister;
 import hotelbooking.demo.domains.response.TwoFactorSetupDTO;
-import hotelbooking.demo.services.BaseRedisService;
-import hotelbooking.demo.services.EmailService;
-import hotelbooking.demo.services.LoginAttemptService;
-import hotelbooking.demo.services.UserService;
+import hotelbooking.demo.services.*;
 import hotelbooking.demo.utils.ApiMessage;
+import hotelbooking.demo.utils.RequestUtil;
 import hotelbooking.demo.utils.SecurityUtil;
 import hotelbooking.demo.utils.exception.IdInvalidException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -29,9 +28,11 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -47,18 +48,24 @@ public class AuthController {
     private final LoginAttemptService loginAttemptService;
     private final EmailService emailService;
     private final BaseRedisService redisService;
+    private final SessionService sessionService;
+    private final JwtDecoder jwtDecoder;
     public AuthController(UserService userService,
                           AuthenticationManagerBuilder authenticationManagerBuilder,
                           SecurityUtil securityUtil,
                           LoginAttemptService loginAttemptService,
                           EmailService emailService,
-                          BaseRedisService redisService) {
+                          BaseRedisService redisService,
+                          SessionService sessionService,
+                          JwtDecoder jwtDecoder) {
         this.userService = userService;
+        this.jwtDecoder = jwtDecoder;
         this.securityUtil = securityUtil;
         this.authenticationManagerBuilder = authenticationManagerBuilder;
         this.loginAttemptService = loginAttemptService;
         this.emailService = emailService;
         this.redisService = redisService;
+        this.sessionService = sessionService;
     }
     public static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
     public static final String REFRESH_TOKEN_ENDPOINT = "http://localhost:8080/api/v1/auth/refresh";
@@ -106,7 +113,8 @@ public class AuthController {
 
     @PostMapping("/login")
     @ApiMessage("Login Account")
-    public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody LoginDTO loginDTO) throws IdInvalidException {
+    public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody LoginDTO loginDTO,
+                                             HttpServletRequest request) throws IdInvalidException {
 
         if (loginAttemptService.isBlocked(loginDTO.getEmail())) {
             long seconds = loginAttemptService.getTimeRemaining(loginDTO.getEmail());
@@ -149,6 +157,9 @@ public class AuthController {
 
 
             String refreshToken = this.securityUtil.createRefreshToken(user.getEmail(), res);
+            String ip = RequestUtil.clientIp(request);
+            String ua = RequestUtil.userAgent(request);
+            sessionService.createSession(user, refreshToken, ua, ip, refreshTokenExpiration);
 
             ResponseCookie resCookies = ResponseCookie
                     .from(REFRESH_TOKEN_COOKIE_NAME, refreshToken)
@@ -167,9 +178,36 @@ public class AuthController {
             throw new IdInvalidException("Email hoặc mật khẩu không chính xác!");
         }
     }
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@CookieValue(name = REFRESH_TOKEN_COOKIE_NAME, required = false) String rtCookieVal,
+                                       @RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String accessToken = authHeader.substring(7);
+            try {
+                Jwt jwt = jwtDecoder.decode(accessToken);
+                long remainingSeconds = Duration.between(Instant.now(), jwt.getExpiresAt()).getSeconds();
+
+                if (remainingSeconds > 0) {
+                    redisService.blacklistToken(accessToken, remainingSeconds);
+                }
+            } catch (Exception e) {
+            }
+        }
+        if (rtCookieVal != null && !rtCookieVal.isBlank()) {
+            sessionService.revokeByRefreshToken(rtCookieVal);
+        }
+        ResponseCookie del = ResponseCookie.from(REFRESH_TOKEN_COOKIE_NAME, "")
+                .httpOnly(true).secure(true).sameSite("None")
+                .path(REFRESH_TOKEN_ENDPOINT).maxAge(0)
+                .build();
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, del.toString())
+                .build();
+    }
     @GetMapping("/refresh")
     @ApiMessage("Refresh Token")
-    public ResponseEntity<ResLoginDTO> refreshToken(@CookieValue (name = REFRESH_TOKEN_COOKIE_NAME, required = false) String refreshTokenCookieVal) throws IdInvalidException {
+    public ResponseEntity<ResLoginDTO> refreshToken(@CookieValue (name = REFRESH_TOKEN_COOKIE_NAME,
+            required = false) String refreshTokenCookieVal) throws IdInvalidException {
         if (refreshTokenCookieVal == null || refreshTokenCookieVal.isBlank()){
             throw new IdInvalidException("Refresh token is empty!");
         }
@@ -178,6 +216,13 @@ public class AuthController {
         User currentUser = this.userService.getUserByEmail(email);
         if (currentUser == null) {
             throw new IdInvalidException("Refresh Token không hợp lệ (User không tồn tại)");
+        }
+        var session = sessionService
+                .findByRefreshToken(refreshTokenCookieVal)
+                .orElseThrow(() -> new IdInvalidException("Refresh session not found"));
+        if (session.getExpiresAt().isBefore(java.time.Instant.now())) {
+            sessionService.revokeByRefreshToken(refreshTokenCookieVal);
+            throw new IdInvalidException("Refresh token expired");
         }
         ResLoginDTO res = new ResLoginDTO();
         ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(
@@ -190,6 +235,7 @@ public class AuthController {
         String newAccessToken = this.securityUtil.createRefreshToken(currentUser.getEmail(), res);
         res.setAccessToken(newAccessToken);
         String newRefreshToken = this.securityUtil.createRefreshToken(currentUser.getEmail(), res);
+        sessionService.rotateRefreshToken(session, newRefreshToken, refreshTokenExpiration);
 
         ResponseCookie resCookies = ResponseCookie
                 .from(REFRESH_TOKEN_COOKIE_NAME, newRefreshToken)
@@ -276,4 +322,5 @@ public class AuthController {
                 .qrCodeUrl(qrCodeUrl)
                 .build());
     }
+
 }
