@@ -34,11 +34,8 @@ import javax.crypto.spec.SecretKeySpec;
 public class SecurityConfig {
 
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
-    private final BaseRedisService baseRedisService;
-    public SecurityConfig(CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
-                          BaseRedisService baseRedisService) {
+    public SecurityConfig(CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
-        this.baseRedisService = baseRedisService;
     }
 
     @Bean
@@ -69,7 +66,7 @@ public class SecurityConfig {
         return jwtAuthenticationConverter;
     }
     @Bean
-    public JwtDecoder jwtDecoder(){
+    public JwtDecoder jwtDecoder(BaseRedisService baseRedisService){
         NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withSecretKey(getSecretKey())
                 .macAlgorithm(SecurityUtil.JWT_ALGORITHM).build();
         return token -> {
