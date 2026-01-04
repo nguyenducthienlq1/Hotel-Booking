@@ -16,11 +16,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Hotel {
+public class Hotel extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-
     @Column(nullable = false)
     private String name;
 
@@ -42,18 +41,14 @@ public class Hotel {
     @Column(nullable = false)
     private String longitude;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     @Min(value = 1, message = "Star must be at least 1")
     @Max(value = 5, message = "Star must not exceed 5")
     private int star;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private boolean isActive;
 
-    private Instant createdAt;
-    private Instant updatedAt;
-    private String createdBy;
-    private String updatedBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
@@ -69,6 +64,5 @@ public class Hotel {
 
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HotelAmenity> hotelAmenities = new ArrayList<>();
-
 
 }

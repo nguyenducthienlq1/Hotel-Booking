@@ -14,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Booking {
+public class Booking extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,9 +36,6 @@ public class Booking {
 
     @Column(name = "special_requests", columnDefinition = "TEXT")
     private String specialRequests;
-
-    private Instant createdAt;
-    private Instant updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;

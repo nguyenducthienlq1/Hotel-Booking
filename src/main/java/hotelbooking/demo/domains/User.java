@@ -17,7 +17,7 @@ import java.util.List;
 @Table(name = "users", indexes = {
         @Index(name = "idx_users_email_unique", columnList = "email", unique = true)
 })
-public class User {
+public class User extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -48,11 +48,6 @@ public class User {
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
-    private Instant createdAt;
-    private Instant updatedAt;
-    private String createdBy;
-    private String updatedBy;
-
     @OneToMany(mappedBy = "user",cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AuditLog> auditLogs = new ArrayList<>();
 
@@ -65,15 +60,4 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Booking> bookings = new ArrayList<>();
 
-    @PrePersist
-    public void beforeCreate() {
-        this.createdBy = SecurityUtil.getCurrentUserLogin().orElse("");
-        this.createdAt = Instant.now();
-    }
-
-    @PreUpdate
-    public void beforeUpdate() {
-        this.updatedAt = Instant.now();
-        this.updatedBy = SecurityUtil.getCurrentUserLogin().orElse("");
-    }
 }
