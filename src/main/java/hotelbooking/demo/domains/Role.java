@@ -1,5 +1,6 @@
 package hotelbooking.demo.domains;
 
+import hotelbooking.demo.domains.enums.RoleName;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,12 +19,10 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(nullable = false, length = 50)
-    private String name;
+    @Enumerated(EnumType.STRING)
+    private RoleName name;
 
     @Column(length = 255)
     private String description;
 
-    @OneToMany(mappedBy = "role")
-    private List<UserRole> userRoles;
 }

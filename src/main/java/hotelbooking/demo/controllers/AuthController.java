@@ -261,8 +261,8 @@ public class AuthController {
                 user.setTwoFactorEnabled(true);
                 userService.save(user);
             }
-            List<GrantedAuthority> authorities = user.getUserRoles().stream()
-                    .map(role -> new SimpleGrantedAuthority("ROLE_USER_CREATE")) // Ví dụ: "ROLE_USER"
+            List<GrantedAuthority> authorities = user.getRoles().stream()
+                    .map(role -> new SimpleGrantedAuthority(role.getName().name()))
                     .collect(Collectors.toList());
             Authentication authentication = new UsernamePasswordAuthenticationToken(
                     user.getEmail(),
