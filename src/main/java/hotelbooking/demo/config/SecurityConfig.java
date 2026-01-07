@@ -3,6 +3,7 @@ package hotelbooking.demo.config;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.util.Base64;
 import hotelbooking.demo.services.BaseRedisService;
+import hotelbooking.demo.utils.CustomAccessDeniedHandler;
 import hotelbooking.demo.utils.SecurityUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -34,8 +35,11 @@ import javax.crypto.spec.SecretKeySpec;
 public class SecurityConfig {
 
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
-    public SecurityConfig(CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
+    private final CustomAccessDeniedHandler accessDeniedHandler;
+    public SecurityConfig(CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
+                          CustomAccessDeniedHandler accessDeniedHandler) {
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
+        this.accessDeniedHandler = accessDeniedHandler;
     }
 
     @Bean
@@ -105,7 +109,7 @@ public class SecurityConfig {
                 .exceptionHandling(
                         exceptions -> exceptions
                                 .authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint())//401
-                                .accessDeniedHandler(new BearerTokenAccessDeniedHandler()) //403
+                                .accessDeniedHandler(accessDeniedHandler) //403
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 

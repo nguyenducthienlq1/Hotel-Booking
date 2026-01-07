@@ -44,7 +44,7 @@ public class Hotel extends BaseEntity{
     @Column(nullable = true)
     @Min(value = 1, message = "Star must be at least 1")
     @Max(value = 5, message = "Star must not exceed 5")
-    private int star;
+    private Integer star;
 
     @Column(nullable = true)
     private boolean isActive;

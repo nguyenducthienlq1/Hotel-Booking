@@ -9,6 +9,7 @@ import hotelbooking.demo.utils.ApiMessage;
 import hotelbooking.demo.utils.SecurityUtil;
 import hotelbooking.demo.utils.exception.IdInvalidException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -32,6 +33,7 @@ public class MediaController {
 
     @PostMapping("/upload-avatar")
     @ApiMessage("Upload User Avatar")
+    @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<FileDTO> uploadAvatar(
             @RequestParam("file") MultipartFile file
     ) throws IdInvalidException, IOException {

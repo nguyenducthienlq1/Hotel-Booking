@@ -2,22 +2,31 @@ package hotelbooking.demo.services;
 
 import com.warrenstrange.googleauth.GoogleAuthenticator;
 import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
+import hotelbooking.demo.domains.Role;
 import hotelbooking.demo.domains.User;
+import hotelbooking.demo.domains.enums.RoleName;
 import hotelbooking.demo.domains.request.RegisterDTO;
 import hotelbooking.demo.domains.response.UserDTO;
+import hotelbooking.demo.repositories.RoleRepository;
 import hotelbooking.demo.repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Collections;
 
 @Service
 public class UserService {
     private UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final GoogleAuthenticator googleAuthenticator = new GoogleAuthenticator();
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    private final RoleRepository roleRepository;
+    public UserService(UserRepository userRepository,
+                       PasswordEncoder passwordEncoder,
+                       RoleRepository roleRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.roleRepository = roleRepository;
     }
     public User save(User user) {
         return userRepository.save(user);
@@ -34,6 +43,17 @@ public class UserService {
                 .password(passwordEncoder.encode(loginDTO.getPassword()))
                 .isActive(false)
                 .build();
+        Role userRole;
+        if ("HOTEL_OWNER".equalsIgnoreCase(loginDTO.getRole())) {
+            // Nếu muốn làm chủ khách sạn
+            userRole = roleRepository.findByName(RoleName.ROLE_HOTEL_OWNER)
+                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+        } else {
+            // Mặc định là User thường (kể cả khi họ gửi "ADMIN" hay null)
+            userRole = roleRepository.findByName(RoleName.ROLE_USER)
+                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+        }
+        user.setRoles(Collections.singleton(userRole));
         this.userRepository.save(user);
         return user;
     }

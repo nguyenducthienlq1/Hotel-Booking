@@ -59,7 +59,11 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Booking> bookings = new ArrayList<>();
 
-    @ManyToMany(fetch = FetchType.EAGER) // EAGER để khi load User là lấy luôn quyền
+    @ManyToMany(fetch = FetchType.EAGER
+            ,cascade = {CascadeType.DETACH,
+            CascadeType.MERGE,
+            CascadeType.PERSIST,
+            CascadeType.REFRESH}) // EAGER để khi load User là lấy luôn quyền
     @JoinTable(
             name = "user_roles", // <--- Tên bảng trung gian trong DB (UserRole)
             joinColumns = @JoinColumn(name = "user_id"), // Khóa ngoại trỏ về bảng User

@@ -44,6 +44,7 @@ public class HotelService {
                 .description(req.getDescription())
                 .longitude(req.getLongitude())
                 .latitude(req.getLatitude())
+                .country(req.getCountry())
                 .isActive(true)
                 .build();
         Hotel savedHotel = hotelRepository.save(hotel);
@@ -73,6 +74,7 @@ public class HotelService {
         return HotelResponse.builder()
                 .id(hotel.getId())
                 .name(hotel.getName())
+                .description(hotel.getDescription())
                 .city(hotel.getCity())
                 .address(hotel.getAddress())
                 .latitude(hotel.getLatitude())
