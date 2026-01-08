@@ -3,8 +3,6 @@ package hotelbooking.demo.domains;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.Instant;
-
 @Entity
 @Table(name = "room_types")
 @Getter
@@ -12,7 +10,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RoomType {
+public class RoomType extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,11 +35,7 @@ public class RoomType {
     private int sizeSquareM;
 
     @Column(name = "is_active", nullable = false)
-    private boolean isActive;
-
-    private Instant createdAt;
-    private Instant updatedAt;
-
+    private Boolean isActive;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hotel_id")

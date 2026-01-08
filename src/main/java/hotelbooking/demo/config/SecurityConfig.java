@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.web.config.EnableSpringDataWebSupport;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -101,8 +102,8 @@ public class SecurityConfig {
                                 .requestMatchers("/api/v1/auth/register",
                                         "/api/v1/auth/login",
                                         "/api/v1/auth/refresh",
-                                        "/api/v1/auth/verify",
-                                        "/api/v1/hotel").permitAll()
+                                        "/api/v1/auth/verify").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/v1/hotel/**").permitAll()
                                 .anyRequest().authenticated())
                 .oauth2ResourceServer((oauth2 -> oauth2.jwt(Customizer.withDefaults())
                         .authenticationEntryPoint(this.customAuthenticationEntryPoint)))

@@ -47,8 +47,7 @@ public class Hotel extends BaseEntity{
     private Integer star;
 
     @Column(nullable = true)
-    private boolean isActive;
-
+    private Boolean isActive;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;

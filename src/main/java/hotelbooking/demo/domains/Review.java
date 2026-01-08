@@ -28,8 +28,6 @@ public class Review {
     @Column(name = "is_visible", nullable = false)
     private boolean isVisible;
 
-    // relationship fields must be at the bottom
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hotel_id")
     private Hotel hotel;

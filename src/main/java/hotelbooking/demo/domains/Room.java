@@ -1,9 +1,8 @@
 package hotelbooking.demo.domains;
 
+import hotelbooking.demo.domains.enums.RoomStatus;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.Instant;
 
 @Entity
 @Table(name = "rooms")
@@ -12,7 +11,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Room {
+public class Room extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,10 +24,8 @@ public class Room {
     private int floor;
 
     @Column(nullable = false)
-    private String status;
-
-    private Instant createdAt;
-    private Instant updatedAt;
+    @Enumerated(EnumType.STRING)
+    private RoomStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "roomtype_id")

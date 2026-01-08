@@ -4,7 +4,11 @@ package hotelbooking.demo.controllers;
 import hotelbooking.demo.domains.Hotel;
 import hotelbooking.demo.domains.request.HotelRequest;
 import hotelbooking.demo.domains.response.HotelResponse;
+import hotelbooking.demo.domains.response.RoomResponse;
+import hotelbooking.demo.domains.response.RoomTypeResDTO;
 import hotelbooking.demo.services.HotelService;
+import hotelbooking.demo.services.RoomService;
+import hotelbooking.demo.services.RoomTypeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -15,8 +19,14 @@ import java.util.List;
 @RequestMapping("${hotelbooking.api-prefix}/hotel")
 public class HotelController {
     private final HotelService hotelService;
-    public HotelController(HotelService hotelService) {
+    private final RoomService roomService;
+    private final RoomTypeService roomTypeService;
+    public HotelController(HotelService hotelService,
+                           RoomService roomService,
+                           RoomTypeService roomTypeService) {
         this.hotelService = hotelService;
+        this.roomService = roomService;
+        this.roomTypeService = roomTypeService;
     }
 
     @GetMapping
@@ -47,5 +57,13 @@ public class HotelController {
     public ResponseEntity<Void> deleteHotel(@PathVariable Long hotelId) {
         hotelService.deleteHotel(hotelId);
         return ResponseEntity.noContent().build();
+    }
+    @GetMapping("/{hotelId}/rooms")
+    public ResponseEntity<List<RoomResponse>> getAllRooms(@PathVariable Long hotelId) {
+        return ResponseEntity.ok(roomService.getAllRoomsByHotelId(hotelId));
+    }
+    @GetMapping("/{hotelId}/roomtypes")
+    public ResponseEntity<List<RoomTypeResDTO>> getByHotel(@PathVariable Long hotelId) {
+        return ResponseEntity.ok(roomTypeService.getAllRoomTypesByHotel(hotelId));
     }
 }
