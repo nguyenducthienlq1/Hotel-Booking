@@ -103,7 +103,10 @@ public class SecurityConfig {
                                         "/api/v1/auth/login",
                                         "/api/v1/auth/refresh",
                                         "/api/v1/auth/verify").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/v1/hotel/**").permitAll()
+                                .requestMatchers(HttpMethod.GET,
+                                        "/api/v1/hotel/**",
+                                        "/api/v1/amenities").permitAll()
+
                                 .anyRequest().authenticated())
                 .oauth2ResourceServer((oauth2 -> oauth2.jwt(Customizer.withDefaults())
                         .authenticationEntryPoint(this.customAuthenticationEntryPoint)))

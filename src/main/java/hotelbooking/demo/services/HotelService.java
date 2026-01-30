@@ -1,14 +1,19 @@
 package hotelbooking.demo.services;
 
+import hotelbooking.demo.domains.Amenity;
 import hotelbooking.demo.domains.Hotel;
+import hotelbooking.demo.domains.HotelAmenity;
 import hotelbooking.demo.domains.User;
 import hotelbooking.demo.domains.request.HotelRequest;
+import hotelbooking.demo.domains.response.AmenityResDTO;
 import hotelbooking.demo.domains.response.HotelResponse;
+import hotelbooking.demo.repositories.AmenityRepository;
 import hotelbooking.demo.repositories.HotelRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,10 +21,13 @@ import java.util.stream.Collectors;
 public class HotelService {
     private final HotelRepository hotelRepository;
     private final UserService userService;
+    private final AmenityRepository amenityRepository;
     public HotelService(HotelRepository hotelRepository,
-                        UserService userService) {
+                        UserService userService,
+                        AmenityRepository amenityRepository) {
         this.hotelRepository = hotelRepository;
         this.userService = userService;
+        this.amenityRepository = amenityRepository;
     }
     public List<HotelResponse> getAllHotels() {
         return hotelRepository.findAll().stream()
@@ -36,7 +44,6 @@ public class HotelService {
         if (hotelRepository.existsByNameAndCity(req.getName(), req.getCity())) {
             throw new RuntimeException("Khách sạn này đã tồn tại tại " + req.getCity());
         }
-
         Hotel hotel = Hotel.builder()
                 .name(req.getName())
                 .city(req.getCity())
@@ -47,6 +54,23 @@ public class HotelService {
                 .country(req.getCountry())
                 .isActive(true)
                 .build();
+
+        if (req.getAmenityId() != null && !req.getAmenityId().isEmpty()) {
+            List<Amenity> selectedAmenities = amenityRepository.findAllById(req.getAmenityId());
+            if (selectedAmenities.size() < req.getAmenityId().size()) {
+                throw new RuntimeException("Một số tiện ích không tồn tại");
+            }
+
+            // Tạo các đối tượng HotelAmenity (Bảng trung gian)
+            List<HotelAmenity> hotelAmenities = selectedAmenities.stream()
+                    .map(amenity -> {
+                        HotelAmenity ha = new HotelAmenity();
+                        ha.setHotel(hotel);    // Link với Hotel mới
+                        ha.setAmenity(amenity); // Link với Amenity tìm được
+                        return ha;
+                    })
+                    .collect(Collectors.toList());
+        }
         Hotel savedHotel = hotelRepository.save(hotel);
         return mapToHotelResDTO(savedHotel);
     }
@@ -71,6 +95,22 @@ public class HotelService {
         hotelRepository.deleteById(idHotel);
     }
     private HotelResponse mapToHotelResDTO(Hotel hotel) {
+        List<AmenityResDTO> amenityResDTOS = new ArrayList<>();
+
+        if (hotel.getHotelAmenities() != null) {
+            amenityResDTOS = hotel.getHotelAmenities().stream()
+                    .map(hotelAmenity -> {
+                        Amenity amenity = hotelAmenity.getAmenity();
+
+                        return AmenityResDTO.builder()
+                                .id(amenity.getId())
+                                .code(amenity.getCode())
+                                .name(amenity.getName())
+                                .description(amenity.getDescription())
+                                .build();
+                    })
+                    .collect(Collectors.toList());
+        }
         return HotelResponse.builder()
                 .id(hotel.getId())
                 .name(hotel.getName())
@@ -80,6 +120,7 @@ public class HotelService {
                 .latitude(hotel.getLatitude())
                 .longitude(hotel.getLongitude())
                 .country(hotel.getCountry())
+                .amenities(amenityResDTOS)
                 .build();
     }
 }

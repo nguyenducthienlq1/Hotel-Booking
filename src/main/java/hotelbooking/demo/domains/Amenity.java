@@ -19,7 +19,7 @@ public class Amenity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(length = 50)
+    @Column(length = 50, unique = true, nullable = false)
     private String code;
 
     @Column(length = 100, nullable = false)

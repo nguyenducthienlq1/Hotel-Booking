@@ -26,7 +26,7 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         RestResponse<Object> res = new RestResponse();
         res.setStatusCode(HttpStatus.FORBIDDEN.value());
         res.setError("Forbidden");
-        res.setMessage("Bạn không có quyền truy cập vào tài nguyên này (Cần quyền ADMIN hoặc OWNER).");
+        res.setMessage("Bạn không có quyền truy cập vào tài nguyên này");
 
         // 3. Ghi JSON ra response
         mapper.writeValue(response.getWriter(), res);

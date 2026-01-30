@@ -1,14 +1,14 @@
 package hotelbooking.demo.domains.request;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
+import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Getter
 public class HotelRequest {
     private String name;
     private String description;
@@ -17,4 +17,6 @@ public class HotelRequest {
     private String country;
     private String latitude;
     private String longitude;
+
+    private List<Long> amenityId;
 }

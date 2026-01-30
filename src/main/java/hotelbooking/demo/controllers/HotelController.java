@@ -66,4 +66,5 @@ public class HotelController {
     public ResponseEntity<List<RoomTypeResDTO>> getByHotel(@PathVariable Long hotelId) {
         return ResponseEntity.ok(roomTypeService.getAllRoomTypesByHotel(hotelId));
     }
+
 }
