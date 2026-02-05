@@ -63,4 +63,7 @@ public class Hotel extends BaseEntity{
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HotelAmenity> hotelAmenities = new ArrayList<>();
 
+    @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<HotelMedia> media = new ArrayList<>();
+
 }

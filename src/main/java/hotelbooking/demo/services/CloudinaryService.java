@@ -20,7 +20,9 @@ public class CloudinaryService {
         // folderName: Để gom nhóm ảnh (ví dụ: "avatar", "hotel-room")
         return cloudinary.uploader().upload(file.getBytes(),
                 ObjectUtils.asMap(
-                        "folder", folderName
+                        "folder", folderName,
+                        "resource_type", "auto"
+
                 ));
     }
     public void deleteFile(String publicId) throws IOException {

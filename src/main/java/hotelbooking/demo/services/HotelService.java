@@ -1,18 +1,19 @@
 package hotelbooking.demo.services;
 
-import hotelbooking.demo.domains.Amenity;
-import hotelbooking.demo.domains.Hotel;
-import hotelbooking.demo.domains.HotelAmenity;
-import hotelbooking.demo.domains.User;
+import hotelbooking.demo.domains.*;
+
 import hotelbooking.demo.domains.request.HotelRequest;
+import hotelbooking.demo.domains.request.MediaReqDTO;
 import hotelbooking.demo.domains.response.AmenityResDTO;
 import hotelbooking.demo.domains.response.HotelResponse;
+import hotelbooking.demo.domains.response.MediaResDTO;
 import hotelbooking.demo.repositories.AmenityRepository;
 import hotelbooking.demo.repositories.HotelRepository;
-import org.springframework.security.core.context.SecurityContextHolder;
+import hotelbooking.demo.repositories.RoomTypeRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,14 +21,14 @@ import java.util.stream.Collectors;
 @Service
 public class HotelService {
     private final HotelRepository hotelRepository;
-    private final UserService userService;
     private final AmenityRepository amenityRepository;
+    private final RoomTypeRepository roomTypeRepository;
     public HotelService(HotelRepository hotelRepository,
-                        UserService userService,
+                        RoomTypeRepository roomTypeRepository,
                         AmenityRepository amenityRepository) {
         this.hotelRepository = hotelRepository;
-        this.userService = userService;
         this.amenityRepository = amenityRepository;
+        this.roomTypeRepository = roomTypeRepository;
     }
     public List<HotelResponse> getAllHotels() {
         return hotelRepository.findAll().stream()
@@ -39,7 +40,7 @@ public class HotelService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy khách sạn với ID: " + id));
         return mapToHotelResDTO(hotel);
     }
-
+    @Transactional
     public HotelResponse createHotel(HotelRequest req) {
         if (hotelRepository.existsByNameAndCity(req.getName(), req.getCity())) {
             throw new RuntimeException("Khách sạn này đã tồn tại tại " + req.getCity());
@@ -52,6 +53,8 @@ public class HotelService {
                 .longitude(req.getLongitude())
                 .latitude(req.getLatitude())
                 .country(req.getCountry())
+                .hotelAmenities(new ArrayList<>())
+                .media(new ArrayList<>())
                 .isActive(true)
                 .build();
 
@@ -70,10 +73,13 @@ public class HotelService {
                         return ha;
                     })
                     .collect(Collectors.toList());
+            hotel.setHotelAmenities(hotelAmenities);
         }
+        processMediaList(hotel, req.getMedia());
         Hotel savedHotel = hotelRepository.save(hotel);
         return mapToHotelResDTO(savedHotel);
     }
+    @Transactional
     public HotelResponse updateHotel(Long idHotel, HotelRequest req) {
         Hotel hotel = hotelRepository.findById(idHotel)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy khách sạn với ID: " + idHotel));
@@ -84,7 +90,22 @@ public class HotelService {
         hotel.setDescription(req.getDescription());
         hotel.setLongitude(req.getLongitude());
         hotel.setLatitude(req.getLatitude());
+        if (req.getAmenityId() != null) {
+            hotel.getHotelAmenities().clear(); // Xóa hết cái cũ đi
 
+            if (!req.getAmenityId().isEmpty()) {
+                List<Amenity> newAmenities = amenityRepository.findAllById(req.getAmenityId());
+                for (Amenity amenity : newAmenities) {
+                    HotelAmenity ha = new HotelAmenity();
+                    ha.setHotel(hotel);
+                    ha.setAmenity(amenity);
+                    hotel.getHotelAmenities().add(ha);
+                }
+            }
+        }
+        if (req.getMedia() != null) {
+            processMediaList(hotel, req.getMedia());
+        }
         Hotel updatedHotel = hotelRepository.save(hotel);
         return mapToHotelResDTO(updatedHotel);
     }
@@ -111,6 +132,18 @@ public class HotelService {
                     })
                     .collect(Collectors.toList());
         }
+        List<MediaResDTO> mediaResDTOS = new ArrayList<>();
+        if (hotel.getMedia() != null) {
+            mediaResDTOS = hotel.getMedia().stream()
+                    .map(m -> MediaResDTO.builder()
+                            .id(m.getId())
+                            .url(m.getUrl())
+                            .type(m.getType())     // IMAGE hoặc VIDEO
+                            .category(m.getCategory()) // POOL, ROOM, LOBBY...
+                            .caption(m.getCaption())
+                            .build())
+                    .collect(Collectors.toList());
+        }
         return HotelResponse.builder()
                 .id(hotel.getId())
                 .name(hotel.getName())
@@ -121,6 +154,34 @@ public class HotelService {
                 .longitude(hotel.getLongitude())
                 .country(hotel.getCountry())
                 .amenities(amenityResDTOS)
+                .media(mediaResDTOS)
                 .build();
+    }
+    private void processMediaList(Hotel hotel, List<MediaReqDTO> mediaReqs) {
+        if (mediaReqs == null || mediaReqs.isEmpty()) return;
+
+        // Nếu update thì clear cũ (hoặc làm logic thông minh hơn tùy bạn)
+        if (hotel.getMedia() != null) {
+            hotel.getMedia().clear();
+        }
+
+        for (MediaReqDTO req : mediaReqs) {
+            HotelMedia mediaEntity = new HotelMedia();
+            mediaEntity.setHotel(hotel);
+            mediaEntity.setUrl(req.getUrl());
+            mediaEntity.setType(req.getType());
+            mediaEntity.setCategory(req.getCategory());
+            mediaEntity.setCaption(req.getCaption());
+
+            // LOGIC QUAN TRỌNG: Kiểm tra RoomType
+            if (req.getRoomTypeId() != null) {
+                RoomType roomType = roomTypeRepository.findById(req.getRoomTypeId())
+                        .orElseThrow(() -> new RuntimeException("RoomType not found ID: " + req.getRoomTypeId()));
+                mediaEntity.setRoomType(roomType);
+            } else {
+                mediaEntity.setRoomType(null);
+            }
+            hotel.getMedia().add(mediaEntity);
+        }
     }
 }

@@ -3,6 +3,9 @@ package hotelbooking.demo.domains;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "room_types")
 @Getter
@@ -40,4 +43,7 @@ public class RoomType extends BaseEntity{
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hotel_id")
     private Hotel hotel;
+
+    @OneToMany(mappedBy = "roomType", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<HotelMedia> media = new ArrayList<>();
 }

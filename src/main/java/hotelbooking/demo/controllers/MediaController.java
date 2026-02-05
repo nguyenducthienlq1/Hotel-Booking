@@ -1,13 +1,14 @@
 package hotelbooking.demo.controllers;
 
 import hotelbooking.demo.domains.User;
-import hotelbooking.demo.domains.request.ResLoginDTO;
 import hotelbooking.demo.domains.response.FileDTO;
 import hotelbooking.demo.services.CloudinaryService;
 import hotelbooking.demo.services.UserService;
 import hotelbooking.demo.utils.ApiMessage;
 import hotelbooking.demo.utils.SecurityUtil;
 import hotelbooking.demo.utils.exception.IdInvalidException;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,14 +18,20 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 @RequestMapping("${hotelbooking.api-prefix}/media")
 @RestController
 public class MediaController {
      private final CloudinaryService cloudinaryService;
      private final UserService userService;
+     private final ExecutorService executor = Executors.newFixedThreadPool(5);
      public MediaController(CloudinaryService cloudinaryService,
                             UserService userService) {
          this.cloudinaryService = cloudinaryService;
@@ -81,4 +88,54 @@ public class MediaController {
             throw new IdInvalidException("Update User Avatar Failed");
         }
     }
+
+    @PostMapping("/upload-batch")
+    public ResponseEntity<List<MediaResponse>> uploadBatch(
+            @RequestParam("files") List<MultipartFile> files,
+            @RequestParam(value = "folder", defaultValue = "hotel_general_media") String folder
+    ) {
+        long startTotal = System.currentTimeMillis();
+        System.out.println("--- BẮT ĐẦU UPLOAD BATCH: " + files.size() + " files ---");
+
+        List<CompletableFuture<MediaResponse>> futures = files.stream()
+                .map(file -> CompletableFuture.supplyAsync(() -> {
+                    long startThread = System.currentTimeMillis();
+                    String threadName = Thread.currentThread().getName();
+                    System.out.println("⬇️ [Start] " + file.getOriginalFilename() + " on " + threadName + " at: " + (startThread - startTotal) + "ms");
+
+                    try {
+                        Map data = this.cloudinaryService.uploadFile(file, folder);
+
+                        long endThread = System.currentTimeMillis();
+                        System.out.println("⬆️ [DONE] " + file.getOriginalFilename() + " - Mất: " + (endThread - startThread) + "ms");
+
+                        return new MediaResponse(
+                                (String) data.get("secure_url"),
+                                (String) data.get("resource_type"),
+                                (String) data.get("format")
+                        );
+                    } catch (IOException e) {
+                        throw new RuntimeException("Upload failed");
+                    }
+                }, executor))
+                .collect(Collectors.toList());
+
+        List<MediaResponse> uploadedFiles = futures.stream()
+                .map(CompletableFuture::join)
+                .collect(Collectors.toList());
+
+        long endTotal = System.currentTimeMillis();
+        System.out.println("--- TỔNG THỜI GIAN: " + (endTotal - startTotal) + "ms ---");
+
+        return ResponseEntity.ok(uploadedFiles);
+    }
+    @Data
+    @AllArgsConstructor
+    public static class MediaResponse {
+        private String url;
+        private String resourceType; // image / video
+        private String format;
+    }
+
 }
+

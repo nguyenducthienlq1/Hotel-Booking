@@ -1,5 +1,6 @@
 package hotelbooking.demo.domains.request;
 
+import hotelbooking.demo.domains.response.MediaResDTO;
 import lombok.*;
 
 import java.util.List;
@@ -19,4 +20,5 @@ public class HotelRequest {
     private String longitude;
 
     private List<Long> amenityId;
+    private List<MediaReqDTO> media;
 }

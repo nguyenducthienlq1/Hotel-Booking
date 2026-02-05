@@ -21,4 +21,5 @@ public class HotelResponse {
     private String latitude;
     private String longitude;
     private List<AmenityResDTO> amenities;
+    private List<MediaResDTO> media;
 }
