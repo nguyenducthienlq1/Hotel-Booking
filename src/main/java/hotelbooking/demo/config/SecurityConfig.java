@@ -105,7 +105,8 @@ public class SecurityConfig {
                                         "/api/v1/auth/verify").permitAll()
                                 .requestMatchers(HttpMethod.GET,
                                         "/api/v1/hotel/**",
-                                        "/api/v1/amenities").permitAll()
+                                        "/api/v1/amenities",
+                                        "/api/v1/hotel/search").permitAll()
 
                                 .anyRequest().authenticated())
                 .oauth2ResourceServer((oauth2 -> oauth2.jwt(Customizer.withDefaults())

@@ -3,6 +3,7 @@ package hotelbooking.demo.services;
 import hotelbooking.demo.domains.*;
 
 import hotelbooking.demo.domains.request.HotelRequest;
+import hotelbooking.demo.domains.request.HotelSearchReqDTO;
 import hotelbooking.demo.domains.request.MediaReqDTO;
 import hotelbooking.demo.domains.response.AmenityResDTO;
 import hotelbooking.demo.domains.response.HotelResponse;
@@ -10,6 +11,12 @@ import hotelbooking.demo.domains.response.MediaResDTO;
 import hotelbooking.demo.repositories.AmenityRepository;
 import hotelbooking.demo.repositories.HotelRepository;
 import hotelbooking.demo.repositories.RoomTypeRepository;
+import hotelbooking.demo.repositories.specifications.HotelSpecification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -183,5 +190,22 @@ public class HotelService {
             }
             hotel.getMedia().add(mediaEntity);
         }
+    }
+    public Page<HotelResponse> searchHotel(HotelSearchReqDTO req){
+        Specification<Hotel> spec = HotelSpecification.getSpecification(req);
+        Sort sort = Sort.by("id").descending();
+        if (req.getSort() != null){
+            if (req.getSort().equals("star_desc")) {
+                sort = Sort.by("star").descending();
+            } else if (req.getSort().equals("star_asc")) {
+                sort = Sort.by("star").ascending();
+            }
+        }
+        int pageNumber = req.getPage() > 0 ? req.getPage() - 1 : 0;
+        Pageable pageable = PageRequest.of(pageNumber, req.getSize(), sort);
+
+        Page<Hotel> hotelPage = hotelRepository.findAll(spec, pageable);
+
+        return hotelPage.map(this::mapToHotelResDTO);
     }
 }

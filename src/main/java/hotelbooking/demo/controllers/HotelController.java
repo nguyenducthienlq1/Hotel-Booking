@@ -3,6 +3,7 @@ package hotelbooking.demo.controllers;
 
 import hotelbooking.demo.domains.Hotel;
 import hotelbooking.demo.domains.request.HotelRequest;
+import hotelbooking.demo.domains.request.HotelSearchReqDTO;
 import hotelbooking.demo.domains.response.HotelResponse;
 import hotelbooking.demo.domains.response.RoomResponse;
 import hotelbooking.demo.domains.response.RoomTypeResDTO;
@@ -66,5 +67,8 @@ public class HotelController {
     public ResponseEntity<List<RoomTypeResDTO>> getByHotel(@PathVariable Long hotelId) {
         return ResponseEntity.ok(roomTypeService.getAllRoomTypesByHotel(hotelId));
     }
-
+    @GetMapping("/search")
+    public ResponseEntity<?> searchHotels(@ModelAttribute HotelSearchReqDTO req) {
+        return ResponseEntity.ok(hotelService.searchHotel(req));
+    }
 }
