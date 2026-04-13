@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,8 +24,8 @@ public class Booking extends BaseEntity{
     @Column(nullable = false)
     private String status;
 
-    private Instant checkinDate;
-    private Instant checkoutDate;
+    private LocalDate checkinDate;
+    private LocalDate checkoutDate;
 
     @Column(name = "total_price", nullable = false)
     private double totalPrice;
@@ -44,7 +45,7 @@ public class Booking extends BaseEntity{
     private Hotel hotel;
 
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<BookingRoom> bookingRoom = new ArrayList<>();
+    private List<BookingRoom> bookingRooms = new ArrayList<>();
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payment")

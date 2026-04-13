@@ -94,21 +94,12 @@ public class MediaController {
             @RequestParam("files") List<MultipartFile> files,
             @RequestParam(value = "folder", defaultValue = "hotel_general_media") String folder
     ) {
-        long startTotal = System.currentTimeMillis();
-        System.out.println("--- BẮT ĐẦU UPLOAD BATCH: " + files.size() + " files ---");
+
 
         List<CompletableFuture<MediaResponse>> futures = files.stream()
                 .map(file -> CompletableFuture.supplyAsync(() -> {
-                    long startThread = System.currentTimeMillis();
-                    String threadName = Thread.currentThread().getName();
-                    System.out.println("⬇️ [Start] " + file.getOriginalFilename() + " on " + threadName + " at: " + (startThread - startTotal) + "ms");
-
                     try {
                         Map data = this.cloudinaryService.uploadFile(file, folder);
-
-                        long endThread = System.currentTimeMillis();
-                        System.out.println("⬆️ [DONE] " + file.getOriginalFilename() + " - Mất: " + (endThread - startThread) + "ms");
-
                         return new MediaResponse(
                                 (String) data.get("secure_url"),
                                 (String) data.get("resource_type"),
@@ -123,10 +114,6 @@ public class MediaController {
         List<MediaResponse> uploadedFiles = futures.stream()
                 .map(CompletableFuture::join)
                 .collect(Collectors.toList());
-
-        long endTotal = System.currentTimeMillis();
-        System.out.println("--- TỔNG THỜI GIAN: " + (endTotal - startTotal) + "ms ---");
-
         return ResponseEntity.ok(uploadedFiles);
     }
     @Data

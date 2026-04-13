@@ -251,7 +251,8 @@ public class AuthController {
 
     @PostMapping("/2fa/verify-2fa")
     @ApiMessage("2FA Login")
-    public ResponseEntity<?> verify2FA(@RequestBody Verify2FADTO request) {
+    public ResponseEntity<?> verify2FA(@RequestBody Verify2FADTO request,
+                                       HttpServletRequest httpRequest) {
         User user = userService.getUserByEmail(request.getEmail());
 
         boolean isValid = userService.validateCode(user.getTwoFactorSecret(), request.getCode());
@@ -281,6 +282,7 @@ public class AuthController {
             //Tạo accessToken và refreshToken
             String accessToken = securityUtil.createToken(authentication, dummyDtoForTokenGen);
             String refreshToken = securityUtil.createRefreshToken(user.getEmail(), dummyDtoForTokenGen);
+
             //Tạo cookie
             ResponseCookie resCookies = ResponseCookie
                     .from(REFRESH_TOKEN_COOKIE_NAME, refreshToken)
@@ -303,6 +305,7 @@ public class AuthController {
             return ResponseEntity.status(401).body("Mã xác thực không đúng!");
         }
     }
+
     @GetMapping("/2fa/setup")
     @ApiMessage("Get QR Code for 2FA Setup")
     public ResponseEntity<TwoFactorSetupDTO> setup2FA() {
