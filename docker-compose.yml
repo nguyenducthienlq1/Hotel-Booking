@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:alpine
+    container_name: hotel_booking_redis
+    ports:
+      - "6379:6379"
+    # Lệnh này để đặt password và bật tính năng lưu file (AOF)
+    command: redis-server --requirepass "hotelbooking123" --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - hotel_net
+
+volumes:
+  redis_data:
+
+networks:
+  hotel_net:
+    driver: bridge
