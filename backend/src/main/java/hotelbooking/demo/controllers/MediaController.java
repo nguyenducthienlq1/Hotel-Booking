@@ -7,8 +7,15 @@ import hotelbooking.demo.services.UserService;
 import hotelbooking.demo.utils.ApiMessage;
 import hotelbooking.demo.utils.SecurityUtil;
 import hotelbooking.demo.utils.exception.IdInvalidException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,7 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -28,20 +34,30 @@ import java.util.stream.Collectors;
 
 @RequestMapping("${hotelbooking.api-prefix}/media")
 @RestController
+@Tag(name = "Media Management", description = "Endpoints for uploading and managing media files (Images, Videos) via Cloudinary.")
 public class MediaController {
-     private final CloudinaryService cloudinaryService;
-     private final UserService userService;
-     private final ExecutorService executor = Executors.newFixedThreadPool(5);
-     public MediaController(CloudinaryService cloudinaryService,
-                            UserService userService) {
-         this.cloudinaryService = cloudinaryService;
-         this.userService = userService;
-     }
 
-    @PostMapping("/upload-avatar")
+    private final CloudinaryService cloudinaryService;
+    private final UserService userService;
+    private final ExecutorService executor = Executors.newFixedThreadPool(5);
+
+    public MediaController(CloudinaryService cloudinaryService,
+                           UserService userService) {
+        this.cloudinaryService = cloudinaryService;
+        this.userService = userService;
+    }
+
+    @PostMapping(value = "/upload-avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ApiMessage("Upload User Avatar")
     @PreAuthorize("hasRole('ROLE_USER')")
+    @Operation(summary = "Upload user avatar", description = "Uploads a new profile picture for the currently authenticated user. The old avatar will be deleted automatically in the background. Requires USER role.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Avatar uploaded and updated successfully"),
+            @ApiResponse(responseCode = "400", description = "File is empty or invalid format"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Missing or invalid Access Token")
+    })
     public ResponseEntity<FileDTO> uploadAvatar(
+            @Parameter(description = "Image file to upload", required = true)
             @RequestParam("file") MultipartFile file
     ) throws IdInvalidException, IOException {
 
@@ -61,7 +77,7 @@ public class MediaController {
         User currentUser = this.userService.getUserByEmail(email);
         String oldAvatarUrl = currentUser.getImageUrl();
 
-        // 5. Lưu URL vào Database
+        // Lưu URL vào Database
         boolean success = userService.updateAvatarUser(email, avatarUrl);
 
 
@@ -89,12 +105,18 @@ public class MediaController {
         }
     }
 
-    @PostMapping("/upload-batch")
+    @PostMapping(value = "/upload-batch", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Batch upload media files", description = "Uploads multiple files (images or videos) concurrently to a specified Cloudinary folder.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "All files uploaded successfully"),
+            @ApiResponse(responseCode = "500", description = "Error occurred during file upload")
+    })
     public ResponseEntity<List<MediaResponse>> uploadBatch(
+            @Parameter(description = "List of media files to upload", required = true)
             @RequestParam("files") List<MultipartFile> files,
+            @Parameter(description = "Target folder in Cloudinary", example = "hotel_general_media")
             @RequestParam(value = "folder", defaultValue = "hotel_general_media") String folder
     ) {
-
 
         List<CompletableFuture<MediaResponse>> futures = files.stream()
                 .map(file -> CompletableFuture.supplyAsync(() -> {
@@ -116,13 +138,20 @@ public class MediaController {
                 .collect(Collectors.toList());
         return ResponseEntity.ok(uploadedFiles);
     }
+
     @Data
     @AllArgsConstructor
+    @Schema(description = "Response object containing uploaded media details")
     public static class MediaResponse {
+
+        @Schema(description = "Secure URL of the uploaded file", example = "https://res.cloudinary.com/demo/image/upload/v1234567/sample.jpg")
         private String url;
+
+        @Schema(description = "Type of the resource", example = "image")
         private String resourceType; // image / video
+
+        @Schema(description = "Format of the file", example = "jpg")
         private String format;
     }
 
 }
-

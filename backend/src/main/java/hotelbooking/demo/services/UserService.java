@@ -44,7 +44,7 @@ public class UserService {
                 .isActive(false)
                 .build();
         Role userRole;
-        if ("HOTEL_OWNER".equalsIgnoreCase(loginDTO.getRole())) {
+        if ("HOTEL_OWNER".equalsIgnoreCase(String.valueOf(loginDTO.getRole()))) {
             // Nếu muốn làm chủ khách sạn
             userRole = roleRepository.findByName(RoleName.ROLE_HOTEL_OWNER)
                     .orElseThrow(() -> new RuntimeException("Error: Role is not found."));

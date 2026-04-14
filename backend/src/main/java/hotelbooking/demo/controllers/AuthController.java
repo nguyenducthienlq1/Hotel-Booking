@@ -14,6 +14,10 @@ import hotelbooking.demo.utils.ApiMessage;
 import hotelbooking.demo.utils.RequestUtil;
 import hotelbooking.demo.utils.SecurityUtil;
 import hotelbooking.demo.utils.exception.IdInvalidException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,7 +44,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("${hotelbooking.api-prefix}/auth")
-public class AuthController {
+@Tag(name = "Authentication", description = "Endpoints for user registration, login, 2FA management, and token refresh")public class AuthController {
 
     private final UserService userService;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
@@ -75,6 +79,11 @@ public class AuthController {
 
     @PostMapping("/register")
     @ApiMessage("Register Account")
+    @Operation(summary = "Register a new user", description = "Creates a new user account and sends a verification email to the provided address.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User registered successfully, verification email sent"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or email already exists")
+    })
     public ResponseEntity<ResponseRegister> register(@Valid @RequestBody RegisterDTO registerDTO) throws IdInvalidException {
         if(userService.getUserByEmail(registerDTO.getEmail())!=null){
             throw new IdInvalidException("User has been exists!");
@@ -92,6 +101,11 @@ public class AuthController {
 
     @GetMapping("/verify")
     @ApiMessage("Verify Email")
+    @Operation(summary = "Verify user email", description = "Verifies the user's account using the token sent via email.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Email verified successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid or expired token")
+    })
     public ResponseEntity<ResponseMessage> verifyEmail(@RequestParam("token") String token) {
         ResponseMessage res = new ResponseMessage();
         if (!redisService.hasKey(token)) {
@@ -113,6 +127,12 @@ public class AuthController {
 
     @PostMapping("/login")
     @ApiMessage("Login Account")
+    @Operation(summary = "Authenticate user", description = "Logs in the user. Returns an Access Token or requests 2FA verification if enabled.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Login successful or 2FA required"),
+            @ApiResponse(responseCode = "400", description = "Account not activated or blocked"),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials")
+    })
     public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody LoginDTO loginDTO,
                                              HttpServletRequest request) throws IdInvalidException {
 
@@ -179,6 +199,10 @@ public class AuthController {
         }
     }
     @PostMapping("/logout")
+    @Operation(summary = "Logout user", description = "Blacklists the current access token and revokes the refresh token cookie.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Logged out successfully")
+    })
     public ResponseEntity<Void> logout(@CookieValue(name = REFRESH_TOKEN_COOKIE_NAME, required = false) String rtCookieVal,
                                        @RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -206,6 +230,11 @@ public class AuthController {
     }
     @GetMapping("/refresh")
     @ApiMessage("Refresh Token")
+    @Operation(summary = "Refresh access token", description = "Issues a new Access Token using a valid Refresh Token from cookies.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Tokens refreshed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid or missing refresh token")
+    })
     public ResponseEntity<ResLoginDTO> refreshToken(@CookieValue (name = REFRESH_TOKEN_COOKIE_NAME,
             required = false) String refreshTokenCookieVal) throws IdInvalidException {
         if (refreshTokenCookieVal == null || refreshTokenCookieVal.isBlank()){
@@ -251,6 +280,11 @@ public class AuthController {
 
     @PostMapping("/2fa/verify-2fa")
     @ApiMessage("2FA Login")
+    @Operation(summary = "Verify 2FA TOTP Code", description = "Validates the Google Authenticator code. Issues JWT tokens upon success.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "2FA verified successfully, tokens issued"),
+            @ApiResponse(responseCode = "401", description = "Invalid 2FA code")
+    })
     public ResponseEntity<?> verify2FA(@RequestBody Verify2FADTO request,
                                        HttpServletRequest httpRequest) {
         User user = userService.getUserByEmail(request.getEmail());
@@ -308,6 +342,11 @@ public class AuthController {
 
     @GetMapping("/2fa/setup")
     @ApiMessage("Get QR Code for 2FA Setup")
+    @Operation(summary = "Generate 2FA Setup QR Code", description = "Generates a TOTP secret and returns a QR code URL for apps like Google Authenticator.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "QR Code generated successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized user")
+    })
     public ResponseEntity<TwoFactorSetupDTO> setup2FA() {
 
         String email = SecurityUtil.getCurrentUserLogin().orElseThrow(() -> new RuntimeException("Chưa đăng nhập"));
