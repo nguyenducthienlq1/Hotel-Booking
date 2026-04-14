@@ -1,0 +1,11 @@
+# Bỏ qua tài liệu
+*.pdf
+*.docx
+image/
+HotelSystem/
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env*
+# Backend
+backend/src/main/resources/application.properties
